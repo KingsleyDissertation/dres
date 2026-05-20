@@ -20,6 +20,7 @@ import os
 import numpy as np
 import json
 import pandas as pd
+import pickle
 from dotenv import load_dotenv
 
 # Load environment variables
@@ -37,7 +38,7 @@ from dres.DRES_Sim import DRES_Sim
 ###############################################################################################################
 
 # %%
-sim = dres.go()
+sim = dres.go("simulation-1-spaghetti")
 
 
 ###############################################################################################################
@@ -89,9 +90,10 @@ if sim.params.ev_model == "include_evs":
 
     
     # 4.3 Running the GWO Optimization
+    nc_path = os.path.join(sim.paths.outputs, "base_net.nc")
     gwo = ev_optimise.GWO(
         pop_size = sim.params.pop_size,
-        dim = len(network.loads_t['p_set'].index),
+        dim = len(lb_array),
         max_iter = sim.params.max_iter,
         lb_array = lb_array,
         ub_array = ub_array,
@@ -103,8 +105,7 @@ if sim.params.ev_model == "include_evs":
         charging_price = sim.params.charging_price,
         discharging_price = sim.params.discharging_price,
         delta_soc = delta_soc,
-        network = network,
-        vehicle_power = sim.params.vehicle_power
+        nc_path = nc_path,
     )
 
     pareto_front = gwo.optimize()
@@ -127,6 +128,18 @@ if sim.params.ev_model == "include_evs":
     optimal_power_schedule = optimal_solution['position']
     message_api(msg=f"Optimal Power Schedule:{optimal_power_schedule}")
 
+    # Save EV model outputs for visualization
+    ev_mod = {
+        'pareto_front': pareto_front,
+        'optimal_power_schedule': optimal_power_schedule.tolist() if hasattr(optimal_power_schedule, 'tolist') else list(optimal_power_schedule),
+        'delta_soc': delta_soc.tolist() if hasattr(delta_soc, 'tolist') else list(delta_soc),
+        'gwo_best_scores': gwo.best_scores,
+        'connected_cars': connected_cars.tolist() if hasattr(connected_cars, 'tolist') else list(connected_cars),
+        'lb_array': lb_array.tolist() if hasattr(lb_array, 'tolist') else list(lb_array),
+        'ub_array': ub_array.tolist() if hasattr(ub_array, 'tolist') else list(ub_array),
+    }
+    with open(os.path.join(sim.paths.outputs, 'ev_model_outputs.pkl'), 'wb') as f:
+        pickle.dump(ev_mod, f)
 
 
     ##################################
@@ -138,6 +151,8 @@ if sim.params.ev_model == "include_evs":
     # After assigning all elements, we run a power flow to determine bus voltages, line flows, and losses.
     # 
 
+    if len(network.snapshots) != len(optimal_power_schedule):
+        network.set_snapshots(network.snapshots[: len(optimal_power_schedule)])
     network.storage_units_t.p_set.loc[:, "KIRKWA3A_Storage"] = optimal_power_schedule
     network.pf()
     voltage_magnitudes = network.buses_t.v_mag_pu

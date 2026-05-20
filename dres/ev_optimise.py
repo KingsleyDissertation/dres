@@ -23,6 +23,7 @@ from joblib import Parallel, delayed, parallel_backend
 # Custom Libraries
 from .dafni_utilities import performance, message_api
 
+_worker_net = None
 
 ###############################################################################################################
 # PM
@@ -275,7 +276,7 @@ def init_worker(nc_path):
 
 class GWO:
     def __init__(self, pop_size, dim, max_iter, lb_array, ub_array, initial_soc, delta_t, capacity, min_soc, max_soc,
-                 charging_price, discharging_price, delta_soc, network):
+                 charging_price, discharging_price, delta_soc, nc_path):
         self.pop_size = pop_size
         self.dim = dim
         self.max_iter = max_iter
@@ -299,7 +300,8 @@ class GWO:
         self.optimal_total_cost = None  # Add property to record the optimal total cost
         self.archive = []  # External file, store the non-dominant solution <-- make sure this line exists
         self.delta_soc = delta_soc  # Additional SOC changes per hour
-        self.network = network  # Store network objects
+        self.nc_path = nc_path
+        self.network = None  # Do not store the full PyPSA network to keep the object picklable
 
 
     def initialize_wolves(self):
@@ -331,7 +333,7 @@ class GWO:
         # Create a deep copy of network
         global _worker_net
         if _worker_net is None:
-            _worker_net = pypsa.Network("base_net.nc")
+            _worker_net = pypsa.Network(self.nc_path)
         network_copy = copy.deepcopy(_worker_net)
         network_copy.lines.loc[network_copy.lines['r'] == 0, 'r'] = 1e-6
         total_cost = 0
@@ -342,16 +344,27 @@ class GWO:
             else:  # Discharge revenue
                 total_cost -= abs(power_schedule[t]) * self.discharging_price[t]
         # ------------------------------------------------------------
+        # Align the network to the EV schedule length if it is shorter than the full snapshot set.
+        if len(network_copy.snapshots) != len(power_schedule):
+            if len(network_copy.snapshots) < len(power_schedule):
+                raise ValueError(
+                    "EV schedule length is longer than network snapshots. "
+                    "Please use a matching schedule or smaller network period."
+                )
+            network_copy.set_snapshots(network_copy.snapshots[: len(power_schedule)])
         p_ser = pd.Series(power_schedule, index=network_copy.snapshots)
 
         network_copy.links_t.p_set.loc[:, "Battery_Charge"] = (-p_ser).clip(lower=0)
         network_copy.links_t.p_set.loc[:, "Battery_Discharge"] = p_ser.clip(lower=0)
-        network_copy.optimize(solver_name="gurobi")
+        network_copy.optimize(solver_name="highs")
         optimal_generator_t_p=network_copy.generators_t.p
         optimal_storage_t_p=network_copy.storage_units_t.p
         # >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
-        powerflow_network = pypsa.Network().import_from_netcdf("base_net.nc")
+        powerflow_network = pypsa.Network()
+        powerflow_network.import_from_netcdf(self.nc_path)
         # <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+        if len(powerflow_network.snapshots) != len(optimal_generator_t_p.index):
+            powerflow_network.set_snapshots(powerflow_network.snapshots[: len(optimal_generator_t_p.index)])
         powerflow_network.generators_t.p_set = optimal_generator_t_p
         wind_gens = [g for g in powerflow_network.generators.index
              if "WindTurbine_" in g]         
@@ -364,6 +377,8 @@ class GWO:
             q_series = -p_series * tan_phi*0.6
             powerflow_network.generators.loc[g, "control"] = "PQ"
             powerflow_network.generators_t.q_set[g] = q_series  
+        if len(powerflow_network.snapshots) != len(optimal_storage_t_p.index):
+            powerflow_network.set_snapshots(powerflow_network.snapshots[: len(optimal_storage_t_p.index)])
         powerflow_network.storage_units_t.p_set = optimal_storage_t_p
         powerflow_network.add("StorageUnit",
                     name="KIRKWA3A_Storage",
@@ -461,10 +476,8 @@ class GWO:
     #
     def optimize(self):
         wolves = self.initialize_wolves()
-        n_jobs = -1       
-        nc_path = "base_net.nc"
-        parallel = Parallel(n_jobs=n_jobs, backend="loky",
-                    initializer=init_worker, initargs=(nc_path,))
+        n_jobs = -1
+        parallel = Parallel(n_jobs=n_jobs, backend="threading")
         for iter in range(self.max_iter):
             print(f"Generation {iter + 1}/{self.max_iter}")
             objectives = parallel(delayed(self.objective_function)(wolf.copy()) for wolf in wolves)

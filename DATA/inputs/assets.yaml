@@ -1,0 +1,273 @@
+Generators:
+    Slack_generator:
+        bus: THSO3-
+        control: Slack
+        p_nom: 1000000
+        carrier: AC
+        marginal_cost: 200
+    gas_turbine(Oil_station):
+        bus: FLTOCC1C
+        control: PV
+        carrier: AC
+        p_nom: 10
+        p_set: 10.0
+        marginal_cost: 150
+
+
+StorageUnits:
+    Orkney Storage Park:
+        bus: KIRKWA1A
+        carrier: AC
+        p_nom: 2  
+        max_hours: 8  
+        efficiency_store: 0.911
+        efficiency_dispatch: 0.911
+        marginal_cost: 5
+    KIRKWA3A_Storage:
+        bus: KIRKWA3A
+        p_nom: 2.585                    # MW, Maximum charging/discharging power
+        max_hours: 6.363636363636363    # (16.45/2.585=6.3636....) Energy capacity in MWh / power, approximately 2.19 hours
+        efficiency_store: 0.91
+        efficiency_dispatch: 0.91
+        state_of_charge_initial: 0.3    # Initial SOC set to 30%
+        cyclic_state_of_charge: True
+
+
+
+Loads:
+    # `p_set` should be 0 for shunt reactors; `q_set` non-zero (-ve value for inductive reactive power)
+    Shunt_Reactor_86109:
+        bus: BURGAR1A
+        p_set: 0.0
+        q_set: 8.0
+    Shunt_Reactor_86144:
+        bus: STRONS3B
+        p_set: 0.0
+        q_set: 1.6
+    Shunt_Reactor_86143:
+        bus: SANDAY3B
+        p_set: 0.0
+        q_set: 0.4
+
+
+WindFarms:
+    WindFarm_1:
+        name:
+        file: WindTurbine_1.csv
+        bus: STROMN1A
+        n_turbines: 1
+        lat:
+        lon:
+        turbine_output:
+        farm_output:
+        rescale:
+        url:
+    WindFarm_2:
+        name:
+        file: WindTurbine_2.csv
+        bus: STROMN1B
+        n_turbines: 1
+        lat:
+        lon:
+        turbine_output:
+        farm_output:
+        rescale:
+        url:
+    WindFarm_3:
+        name:
+        file: WindTurbine_3.csv
+        bus: BURGAR1A
+        n_turbines: 2
+        lat:
+        lon:
+        turbine_output:
+        farm_output:
+        rescale:
+        url:
+    WindFarm_4:
+        name:
+        file: WindTurbine_4.csv
+        bus: NWP3-
+        n_turbines: 2
+        lat:
+        lon:
+        turbine_output:
+        farm_output:
+        rescale:
+        url:
+    WindFarm_5:
+        name: Hammers Hill
+        file: WindTurbine_5.csv
+        bus: HAMMARS3A
+        n_turbines: 5
+        lat: 59.0852
+        lon: -3.08011
+        turbine_output: 0.9
+        farm_output: 4.5
+        rescale: 1
+        url: https://www.thewindpower.net/windfarm_en_19237_hammers-hill.php
+    WindFarm_6:
+        name:
+        file: WindTurbine_6.csv
+        bus: BURGAR3B
+        n_turbines: 1
+        lat:
+        lon:
+        turbine_output:
+        farm_output:
+        rescale:
+        url:
+    WindFarm_7:
+        name:
+        file: WindTurbine_7.csv
+        bus: THORNF1B
+        n_turbines: 1
+        lat:
+        lon:
+        turbine_output:
+        farm_output:
+        rescale:
+        url:
+    WindFarm_8:
+        name:
+        file: WindTurbine_8.csv
+        bus: THORNFG1
+        n_turbines: 1
+        lat:
+        lon:
+        turbine_output:
+        farm_output:
+        rescale:
+        url:
+    WindFarm_9:
+        name:
+        file: WindTurbine_9.csv
+        bus: THORNFG2
+        n_turbines: 1
+        lat:
+        lon:
+        turbine_output:
+        farm_output:
+        rescale:
+        url:
+    WindFarm_10:
+        name:
+        file: WindTurbine_10.csv
+        bus: WESTRY1A
+        n_turbines: 1
+        lat:
+        lon:
+        turbine_output:
+        farm_output:
+        rescale:
+        url:
+    WindFarm_12:
+        name: Spurness
+        file: WindTurbine_12.csv
+        bus: SPURNE3A
+        n_turbines: 5
+        lat: 59.18928988
+        lon: -2.69252249
+        turbine_output: 2
+        farm_output: 10
+        rescale: 0.5
+        url: https://www.thewindpower.net/windfarm_en_1501_spurness-wind-farm.php
+    WindFarm_13:
+        name: 
+        file: WindTurbine_13.csv
+        bus: STRONS3C
+        n_turbines: 1
+        lat:
+        lon:
+        turbine_output:
+        farm_output:
+        rescale:
+        url:
+    WindFarm_14:
+        name:
+        file: WindTurbine_14.csv
+        bus: SHAPIN1A
+        n_turbines: 1
+        lat:
+        lon:
+        turbine_output:
+        farm_output:
+        rescale:
+        url:
+    WindFarm_15:
+        name:
+        file: WindTurbine_15.csv
+        bus: KIRKWA1B
+        n_turbines: 1
+        lat:
+        lon:
+        turbine_output:
+        farm_output:
+        rescale:
+        url:
+    WindFarm_16:
+        name:
+        file: WindTurbine_16.csv
+        bus: BARNS3WB
+        n_turbines: 3
+        lat:
+        lon:
+        turbine_output:
+        farm_output:
+        rescale:
+        url:
+    WindFarm_18:
+        name:
+        file: WindTurbine_18.csv
+        bus: STMARY1A
+        n_turbines: 1
+        lat:
+        lon:
+        turbine_output:
+        farm_output:
+        rescale:
+        url:
+    WindFarm_20:
+        name:
+        file: WindTurbine_20.csv
+        bus: NORTHF1A
+        n_turbines: 1
+        lat:
+        lon:
+        turbine_output:
+        farm_output:
+        rescale:
+        url:
+    WindFarm_21:
+        name:
+        file: WindTurbine_21.csv
+        bus: NTHHOY1A
+        n_turbines: 1
+        lat:
+        lon:
+        turbine_output:
+        farm_output:
+        rescale:
+        url:
+    WindFarm_22:
+        name:
+        file: WindTurbine_22.csv
+        bus: LYNESS1A
+        n_turbines: 1
+        lat:
+        lon:
+        turbine_output:
+        farm_output:
+        rescale:
+        url:
+    WindFarm_23:
+        name:
+        file: WindTurbine_23.csv
+        bus: FLOTTA1B
+        n_turbines: 1
+        lat:
+        lon:
+        turbine_output:
+        farm_output:
+        rescale:
+        url:

@@ -1,0 +1,13 @@
+EV_schedule_data:
+  schedule_type: journey_events
+  filename: processed_ev_usage.csv
+  column_name_mappings:
+    datetime: Departure Full Time
+    datetime_charge_start: Departure Full Time
+    datetime_charge_end: Arrival Full Time
+    ev_id: Day
+    soc_on_departure: SOC on Departure
+    soc_on_arrival: SOC on Arrival
+    distance_km: Distance (km)
+    soc_cost: SOC_cost
+  evaluate_datetime_end_from_duration: false
