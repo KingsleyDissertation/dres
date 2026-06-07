@@ -320,6 +320,7 @@ def define_transformers(network, sim):
         os.path.join(sim.paths.inputs,"Transformer_types_definition.csv")
     )
     df = pd.read_csv(file_path)
+    df.columns = df.columns.str.replace('\r\n', '\n')
 
     # message_api('Define the transformer parameters based on your provided data')
     # Define the transformer parameters based on your provided data
@@ -498,7 +499,7 @@ def add_offshore_marine_to_network(network, sim):
             marginal_cost=30
             
     )
-    # ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^  HARD-CODED CONTEXT (TBC)  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    # ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^  WAVE MODIFIED  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
     # vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv  HARD-CODED CONTEXT (TBC)  vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv
     # Add constant wave generators
