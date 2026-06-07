@@ -320,6 +320,7 @@ def define_transformers(network, sim):
         os.path.join(sim.paths.inputs,"Transformer_types_definition.csv")
     )
     df = pd.read_csv(file_path)
+    df.columns = df.columns.str.replace('\r\n', '\n')
 
     # message_api('Define the transformer parameters based on your provided data')
     # Define the transformer parameters based on your provided data
@@ -498,39 +499,28 @@ def add_offshore_marine_to_network(network, sim):
             marginal_cost=30
             
     )
-    # ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^  HARD-CODED CONTEXT (TBC)  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    # ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^  MODIFIED WAVE SECTION  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-    # vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv  HARD-CODED CONTEXT (TBC)  vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv
-    # Add constant wave generators
-    EMEC_wave_power = 7  # MW
-    EMEC_wave_reactive_power = 2.3  # MVar, PF = 0.95
-    # ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^  HARD-CODED CONTEXT (TBC)  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+   # Add wave generator with real CorPower hourly time series
+    wave_file = os.path.join(sim.paths.inputs, "wave_orkney_2019.csv")
+    wave_cf = pd.read_csv(wave_file)
+    wave_cf['time'] = pd.to_datetime(wave_cf['time'])
+    wave_cf.set_index('time', inplace=True)
+    wave_cf = wave_cf.loc[sim.params.start_date:sim.params.end_date]
+    wave_p_max_pu = wave_cf['power (pu)'].clip(0, 1)
 
-    # vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv  HARD-CODED CONTEXT (TBC)  vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv
-    if sim.params.legacy:
-        network.add(
-            "Generator",
-            name="Wave Generator",
-            bus="METC1",
-            p_nom=EMEC_wave_power,
-            carrier="AC",
-            marginal_cost=35
-        )
-    else:
-        network.add(
-            "Generator",
-            name="Wave Generator",
-            bus="METC1",
-            p_nom=EMEC_wave_power,
-            p_set=pd.Series(
-                [EMEC_wave_power] * len(network.snapshots), index=network.snapshots
-            ),
-            q_set=pd.Series(
-                [EMEC_wave_reactive_power] * len(network.snapshots), index=network.snapshots
-            ),
-            carrier="AC",
-            marginal_cost=35
+    EMEC_wave_power = 5  # MW, CorPower Phase 1 planned capacity
+
+    network.add(
+        "Generator",
+        name="Wave Generator",
+        bus="STROMN3A",
+        p_nom=EMEC_wave_power,
+        carrier="AC",
+        marginal_cost=35
     )
+    network.generators_t.p_max_pu["Wave Generator"] = wave_p_max_pu
+
     # ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^  HARD-CODED CONTEXT (TBC)  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
     performance(t0)
