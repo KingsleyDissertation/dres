@@ -454,7 +454,7 @@ def add_offshore_marine_to_network(network, sim):
     tidal_p_max_pu = tidal_cf['power (pu)'].clip(0, 1)
 
     # 7.2 MW — first two CfD projects (Orbital Marine Eday 1 + 2)
-    EDAY_tidal_power = 7.2  # MW
+    EDAY_tidal_power = sim.params.tidal_capacity # MW
 
     network.add(
         "Generator",
@@ -476,7 +476,7 @@ def add_offshore_marine_to_network(network, sim):
     wave_cf = wave_cf.loc[sim.params.start_date:sim.params.end_date]
     wave_p_max_pu = wave_cf['power (pu)'].clip(0, 1)
 
-    EMEC_wave_power = 5  # MW, CorPower Phase 1 planned capacity
+    EMEC_wave_power = sim.params.wave_capacity  # MW, CorPower Phase 1 planned capacities
 
     network.add(
         "Generator",

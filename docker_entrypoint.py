@@ -64,11 +64,11 @@ network = base_model.run_power_flow(network, sim.paths.outputs)
 
 # %% 
 # Optimal EV scheduling (main process)
-
 if sim.params.ev_model == "exclude_evs":
-    # Log performance
     t1 = performance(t0=sim.t0, msg="FULL MODEL RUN COMPLETE", always_verbose=True)
 
+    scenario_name = f"wave{int(sim.params.wave_capacity)}MW_tidal{sim.params.tidal_capacity}MW"
+    network.export_to_netcdf(os.path.join(sim.paths.outputs, f"network_{scenario_name}.nc"))
     network.export_to_netcdf(os.path.join(sim.paths.outputs, "network.nc"))
 
     generate_run_metadata({

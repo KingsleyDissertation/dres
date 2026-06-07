@@ -5,7 +5,7 @@ import os
 
 # Load the network
 network = pypsa.Network()
-network.import_from_netcdf("DATA/outputs/network.nc")
+network.import_from_netcdf("DATA/outputs/network_wave10MW_tidal7.2MW.nc")
 
 # ── 1. Generation time series ──────────────────────────────────────────────
 slack = ["Slack_generator"]

@@ -103,6 +103,9 @@ class Params():
         self.vehicle_power = os.getenv("vehicle_power")
         self.rescale_load =  os.getenv("rescale_load")
         self.legacy =  os.getenv("legacy", "False").lower() in ("true", "1", "yes")
+        self.wave_capacity = os.getenv("wave_capacity", "5")
+        self.tidal_capacity = os.getenv("tidal_capacity", "7.2")
+
 
         # Type setting
         try:
@@ -120,6 +123,8 @@ class Params():
             self.max_soc = float(self.max_soc)
             self.vehicle_power = float(self.vehicle_power)
             self.rescale_load = float(self.rescale_load)
+            self.wave_capacity = float(self.wave_capacity)
+            self.tidal_capacity = float(self.tidal_capacity)
         except:
             raise ValueError("Error interpreting DRES simulation parameters from environment variables.\
                              Please ensure all parameters are specified correctly:\n\
