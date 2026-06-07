@@ -21,6 +21,7 @@ wind_p = pd.DataFrame({
     for g in wind_gens
 }).sum(axis=1)
 
+# Wave power - handles both p_set and p_max_pu cases
 if len(wave_gens) > 0 and wave_gens[0] in network.generators_t.p_max_pu.columns:
     wave_p = pd.DataFrame({
         g: network.generators_t.p_max_pu[g] * network.generators.loc[g, "p_nom"]
@@ -28,14 +29,23 @@ if len(wave_gens) > 0 and wave_gens[0] in network.generators_t.p_max_pu.columns:
     }).sum(axis=1)
 else:
     wave_p = network.generators_t.p[wave_gens].sum(axis=1)
-tidal_p = network.generators_t.p[tidal_gens].sum(axis=1)
+
+# Tidal power - handles both p_set and p_max_pu cases
+if len(tidal_gens) > 0 and tidal_gens[0] in network.generators_t.p_max_pu.columns:
+    tidal_p = pd.DataFrame({
+        g: network.generators_t.p_max_pu[g] * network.generators.loc[g, "p_nom"]
+        for g in tidal_gens
+    }).sum(axis=1)
+else:
+    tidal_p = network.generators_t.p[tidal_gens].sum(axis=1)
 
 total_renewable = wind_p + wave_p + tidal_p
 total_demand    = network.loads_t.p_set.sum(axis=1)
 net_balance     = total_renewable - total_demand
 
+
 # ── 2. Print summary statistics ────────────────────────────────────────────
-print("=== ORKNEY ENERGY BALANCE - CORPOWER 5MW WAVE (2019) ===")
+print("=== ORKNEY ENERGY BALANCE - CORPOWER 5MW WAVE + REAL TIDAL (2019) ===")
 print(f"Total wind generation      : {wind_p.sum():.1f} MWh")
 print(f"Total wave generation      : {wave_p.sum():.1f} MWh")
 print(f"Total tidal generation     : {tidal_p.sum():.1f} MWh")
@@ -60,8 +70,7 @@ axes[0].legend()
 
 # 3b. Wave and tidal on their own scale
 axes[1].fill_between(wave_p.index,  wave_p.values,  alpha=0.7, color='orange', label="Wave (CorPower 5MW)")
-axes[1].fill_between(tidal_p.index, tidal_p.values, alpha=0.5, color='green',  label="Tidal")
-axes[1].set_ylabel("Power (MW)")
+axes[1].fill_between(tidal_p.index, tidal_p.values, alpha=0.5, color='green', label="Tidal (Westray-South 7.2MW)")
 axes[1].set_title("Wave and Tidal Generation (own scale)")
 axes[1].legend()
 

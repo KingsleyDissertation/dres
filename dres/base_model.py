@@ -443,62 +443,29 @@ def add_shunts_to_network(network, sim):
 def add_offshore_marine_to_network(network, sim):
     t0 = performance()
 
-    # vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv  HARD-CODED CONTEXT (TBC)  vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv  ??YAML??
+    # vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv  MODIFIED TIDAL SECTION  vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv  ??YAML??
     # Add constant tidal generators
-    EMEC_tidal_power = 4  # MW, replace with actual power value
-    EMEC_tidal_reactive_power = 1.31  # MVar PF = 0.95
+    # Load real tidal time series (Westray-South, Pennock et al.)
+    tidal_file = os.path.join(sim.paths.inputs, "tidal_orkney_2019.csv")
+    tidal_cf = pd.read_csv(tidal_file)
+    tidal_cf['time'] = pd.to_datetime(tidal_cf['time'])
+    tidal_cf.set_index('time', inplace=True)
+    tidal_cf = tidal_cf.loc[sim.params.start_date:sim.params.end_date]
+    tidal_p_max_pu = tidal_cf['power (pu)'].clip(0, 1)
 
-    EDAY_tidal_power = 7.6  # MW, replace with actual power value
-    EDAY_tidal_reactive_power = 2.50  # MVar PF = 0.95
+    # 7.2 MW — first two CfD projects (Orbital Marine Eday 1 + 2)
+    EDAY_tidal_power = 7.2  # MW
 
-    if sim.params.legacy:
-        network.add(
-            "Generator",
-            name="EMEC Tidal Generator",
-            bus="NEWBIG1D",
-            p_nom=EMEC_tidal_power,
-            carrier="AC",
-            marginal_cost=30
-        )
-        network.add(
-            "Generator",
-            name="EDAY Tidal Generator",
-            bus="NEWBIG1A",
-            p_nom=EDAY_tidal_power,
-            carrier="AC",
-            marginal_cost=30
-        )
-    else:
-        network.add(
-            "Generator",
-            name="EMEC Tidal Generator",
-            bus="NEWBIG1D",
-            p_nom=EMEC_tidal_power,
-            p_set=pd.Series(
-                [EMEC_tidal_power] * len(network.snapshots), index=network.snapshots
-            ),
-            q_set=pd.Series(
-                [EMEC_tidal_reactive_power] * len(network.snapshots), index=network.snapshots
-            ),
-            carrier="AC",
-            marginal_cost=30
-        )
-
-        network.add(
-            "Generator",
-            name="EDAY Tidal Generator",
-            bus="NEWBIG1A",
-            p_nom=EDAY_tidal_power,
-            p_set=pd.Series(
-                [EDAY_tidal_power] * len(network.snapshots), index=network.snapshots
-            ),
-            q_set=pd.Series(
-                [EDAY_tidal_reactive_power] * len(network.snapshots), index=network.snapshots
-            ),
-            carrier="AC",
-            marginal_cost=30
-            
+    network.add(
+        "Generator",
+        name="EDAY Tidal Generator",
+        bus="NEWBIG1A",
+        p_nom=EDAY_tidal_power,
+        carrier="AC",
+        marginal_cost=30
     )
+    network.generators_t.p_max_pu["EDAY Tidal Generator"] = tidal_p_max_pu
+
     # ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^  MODIFIED WAVE SECTION  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
    # Add wave generator with real CorPower hourly time series
