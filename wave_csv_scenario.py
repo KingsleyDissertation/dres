@@ -5,7 +5,7 @@ import os
 
 # Load the network
 network = pypsa.Network()
-network.import_from_netcdf("DATA/outputs/network_wave10MW_tidal7.2MW.nc")
+network.import_from_netcdf("DATA/outputs/network_wave30MW_tidal19.4MW.nc")
 
 # ── 1. Generation time series ──────────────────────────────────────────────
 slack = ["Slack_generator"]
@@ -69,8 +69,8 @@ axes[0].set_title("Orkney Baseline: Wind Generation vs Demand (2019)")
 axes[0].legend()
 
 # 3b. Wave and tidal on their own scale
-axes[1].fill_between(wave_p.index,  wave_p.values,  alpha=0.7, color='orange', label="Wave (CorPower 5MW)")
-axes[1].fill_between(tidal_p.index, tidal_p.values, alpha=0.5, color='green', label="Tidal (Westray-South 7.2MW)")
+axes[1].fill_between(wave_p.index,  wave_p.values,  alpha=0.7, color='orange', label="Wave (CorPower 30MW)")
+axes[1].fill_between(tidal_p.index, tidal_p.values, alpha=0.5, color='green', label="Tidal (Westray-South 19.4MW)")
 axes[1].set_title("Wave and Tidal Generation (own scale)")
 axes[1].legend()
 
@@ -94,6 +94,6 @@ axes[3].set_title("Monthly Excess / Shortfall")
 axes[3].legend()
 
 plt.tight_layout()
-plt.savefig("DATA/outputs/scenario_corpower5MW.png", dpi=150)
+plt.savefig("DATA/outputs/network_wave30MW_tidal19.4MW.png", dpi=150)
 plt.show()
-print("Plot saved to DATA/outputs/baseline_flat5MW.png")
+print("Plot saved to DATA/outputs/banetwork_wave30MW_tidal19.4MW.png")
