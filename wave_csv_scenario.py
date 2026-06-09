@@ -17,14 +17,14 @@ tidal_gens = [g for g in non_slack if "Tidal" in g]
 
 # Wind power = p_max_pu * p_nom
 wind_p = pd.DataFrame({
-    g: network.generators_t.p_max_pu[g] * network.generators.loc[g, "p_nom"]
+    g: network.generators_t.p_max_pu[g].clip(0, 1) * network.generators.loc[g, "p_nom"]
     for g in wind_gens
 }).sum(axis=1)
 
 # Wave power - handles both p_set and p_max_pu cases
 if len(wave_gens) > 0 and wave_gens[0] in network.generators_t.p_max_pu.columns:
     wave_p = pd.DataFrame({
-        g: network.generators_t.p_max_pu[g] * network.generators.loc[g, "p_nom"]
+        g: network.generators_t.p_max_pu[g].clip(0, 1) * network.generators.loc[g, "p_nom"]
         for g in wave_gens
     }).sum(axis=1)
 else:
@@ -33,7 +33,7 @@ else:
 # Tidal power - handles both p_set and p_max_pu cases
 if len(tidal_gens) > 0 and tidal_gens[0] in network.generators_t.p_max_pu.columns:
     tidal_p = pd.DataFrame({
-        g: network.generators_t.p_max_pu[g] * network.generators.loc[g, "p_nom"]
+        g: network.generators_t.p_max_pu[g].clip(0, 1) * network.generators.loc[g, "p_nom"]
         for g in tidal_gens
     }).sum(axis=1)
 else:
@@ -42,9 +42,19 @@ else:
 total_renewable = wind_p + wave_p + tidal_p
 total_demand    = network.loads_t.p_set.sum(axis=1)
 net_balance     = total_renewable - total_demand
+monthly_excess    = net_balance.clip(lower=0).resample('ME').sum()
+monthly_shortfall = net_balance.clip(upper=0).resample('ME').sum()
 
+# ── 2. Capacity factor calculations ───────────────────────────────────────
+wind_pnom  = sum(network.generators.loc[g, "p_nom"] for g in wind_gens)
+wave_pnom  = sum(network.generators.loc[g, "p_nom"] for g in wave_gens)
+tidal_pnom = sum(network.generators.loc[g, "p_nom"] for g in tidal_gens)
 
-# ── 2. Print summary statistics ────────────────────────────────────────────
+wind_cf  = wind_p.sum()  / (wind_pnom  * 8760) if wind_pnom  > 0 else 0
+wave_cf  = wave_p.sum()  / (wave_pnom  * 8760) if wave_pnom  > 0 else 0
+tidal_cf = tidal_p.sum() / (tidal_pnom * 8760) if tidal_pnom > 0 else 0
+
+# ── 3. Print summary statistics ────────────────────────────────────────────
 print("=== ORKNEY ENERGY BALANCE - CORPOWER 5MW WAVE + REAL TIDAL (2019) ===")
 print(f"Total wind generation      : {wind_p.sum():.1f} MWh")
 print(f"Total wave generation      : {wave_p.sum():.1f} MWh")
@@ -56,25 +66,31 @@ print(f"Hours of shortfall         : {(net_balance < 0).sum()}")
 print(f"Hours of excess            : {(net_balance > 0).sum()}")
 print(f"Max excess power           : {net_balance.max():.1f} MW")
 print(f"Max shortfall power        : {net_balance.min():.1f} MW")
-print(f"Wave capacity factor       : {wave_p.mean()/7:.3f}")
+print(f"Wind installed capacity    : {wind_pnom:.1f} MW")
+print(f"Wave installed capacity    : {wave_pnom:.1f} MW")
+print(f"Tidal installed capacity   : {tidal_pnom:.1f} MW")
+print(f"Wind capacity factor       : {wind_cf:.3f}")
+print(f"Wave capacity factor       : {wave_cf:.3f}")
+print(f"Tidal capacity factor      : {tidal_cf:.3f}")
 
-# ── 3. Plot ────────────────────────────────────────────────────────────────
+# ── 4. Plot ────────────────────────────────────────────────────────────────
 fig, axes = plt.subplots(4, 1, figsize=(14, 12), sharex=True)
 
-# 3a. Wind generation
+# 4a. Wind generation
 axes[0].fill_between(wind_p.index, wind_p.values, alpha=0.6, color='steelblue', label="Wind")
 axes[0].plot(total_demand.index, total_demand.values, 'k--', label="Demand", linewidth=1)
 axes[0].set_ylabel("Power (MW)")
 axes[0].set_title("Orkney Baseline: Wind Generation vs Demand (2019)")
 axes[0].legend()
 
-# 3b. Wave and tidal on their own scale
-axes[1].fill_between(wave_p.index,  wave_p.values,  alpha=0.7, color='orange', label="Wave (CorPower 5MW)")
-axes[1].fill_between(tidal_p.index, tidal_p.values, alpha=0.5, color='green', label="Tidal (Westray-South 7.2MW)")
+# 4b. Wave and tidal on their own scale
+axes[1].fill_between(wave_p.index,  wave_p.values,  alpha=0.7, color='orange', label=f"Wave (CorPower {wave_pnom:.0f}MW, CF={wave_cf:.3f})")
+axes[1].fill_between(tidal_p.index, tidal_p.values, alpha=0.5, color='green',  label=f"Tidal (Westray-South {tidal_pnom:.1f}MW, CF={tidal_cf:.3f})")
+axes[1].set_ylabel("Power (MW)")
 axes[1].set_title("Wave and Tidal Generation (own scale)")
 axes[1].legend()
 
-# 3c. Net balance
+# 4c. Net balance
 axes[2].fill_between(net_balance.index, net_balance.values, 0,
                      where=net_balance > 0, alpha=0.5, color='green', label="Excess")
 axes[2].fill_between(net_balance.index, net_balance.values, 0,
@@ -84,9 +100,7 @@ axes[2].set_ylabel("Power (MW)")
 axes[2].set_title("Net Balance (Renewable - Demand)")
 axes[2].legend()
 
-# 3d. Monthly summary
-monthly_excess    = net_balance.clip(lower=0).resample('ME').sum()
-monthly_shortfall = net_balance.clip(upper=0).resample('ME').sum()
+# 4d. Monthly summary
 axes[3].bar(monthly_excess.index,    monthly_excess.values,    width=20, color='green', alpha=0.6, label="Excess")
 axes[3].bar(monthly_shortfall.index, monthly_shortfall.values, width=20, color='red',   alpha=0.6, label="Shortfall")
 axes[3].set_ylabel("Energy (MWh)")
@@ -96,4 +110,4 @@ axes[3].legend()
 plt.tight_layout()
 plt.savefig("DATA/outputs/scenario_corpower5MW.png", dpi=150)
 plt.show()
-print("Plot saved to DATA/outputs/baseline_flat5MW.png")
+print("Plot saved to DATA/outputs/scenario_corpower5MW.png")
