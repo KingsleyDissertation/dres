@@ -1,0 +1,7 @@
+scenario,max_balance_residual_mw,total_energy_dispatched_cost,network_objective,cost_gap,output_file
+R01,3.161915174132446e-13,11380835.609377757,11380835.609376887,8.698552846908569e-07,DATA/outputs/wave_storage_core_v2/hourly_balance/R01_pure_optimized_balance.csv
+R02,2.0250467969162855e-13,10613563.724826567,10613563.724825764,8.028000593185425e-07,DATA/outputs/wave_storage_core_v2/hourly_balance/R02_pure_optimized_balance.csv
+R06,1.5987211554602254e-13,10330507.754069692,10330507.754069531,1.601874828338623e-07,DATA/outputs/wave_storage_core_v2/hourly_balance/R06_pure_optimized_balance.csv
+R03,1.6697754290362354e-13,10983414.332565198,10983414.332564658,5.401670932769775e-07,DATA/outputs/wave_storage_core_v2/hourly_balance/R03_pure_optimized_balance.csv
+R04,2.7000623958883807e-13,10238241.248015437,10238241.248014877,5.606561899185181e-07,DATA/outputs/wave_storage_core_v2/hourly_balance/R04_pure_optimized_balance.csv
+R07,4.192202140984591e-13,9968069.835576765,9968069.835576827,-6.146728992462158e-08,DATA/outputs/wave_storage_core_v2/hourly_balance/R07_pure_optimized_balance.csv

@@ -123,7 +123,7 @@ def add_loads_to_network(network, sim):
     # Load the data from the CSV file for load profiles
     file_path_load = os.path.join(sim.paths.inputs,"Load_Profile.csv")
     df = pd.read_csv(file_path_load)
-    df.DateTime = pd.to_datetime(df.DateTime)
+    df.DateTime = pd.to_datetime(df.DateTime, dayfirst=True)
 
     # Set the 'DateTime' column as the index
     df.set_index("DateTime", inplace=True)
@@ -264,6 +264,7 @@ def add_wind_turbines_to_network(network, sim, weather_state, storm_wind_speeds)
             # >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
             # NOTES TBC - KQ HELP NEEDED
             network.generators_t.p_max_pu[turbine_name] = wind_turbine_p_max_pu
+            network.generators_t.p_set[turbine_name] = wind_turbine_p_max_pu * max_power
             if "q_max" not in network.generators.columns:
                 network.generators["q_max"] = np.nan
             if "q_min" not in network.generators.columns:
@@ -465,6 +466,7 @@ def add_offshore_marine_to_network(network, sim):
         marginal_cost=30
     )
     network.generators_t.p_max_pu["EDAY Tidal Generator"] = tidal_p_max_pu
+    network.generators_t.p_set["EDAY Tidal Generator"] = tidal_p_max_pu * EDAY_tidal_power
 
     # ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^  MODIFIED WAVE SECTION  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
@@ -487,6 +489,7 @@ def add_offshore_marine_to_network(network, sim):
         marginal_cost=35
     )
     network.generators_t.p_max_pu["Wave Generator"] = wave_p_max_pu
+    network.generators_t.p_set["Wave Generator"] = wave_p_max_pu * EMEC_wave_power
 
     # ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^  HARD-CODED CONTEXT (TBC)  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
@@ -495,15 +498,14 @@ def add_offshore_marine_to_network(network, sim):
 
 def add_control(network, sim):
     t0 = performance()
-    if sim.params.legacy:
-        network.generators.loc["Slack_generator", "control"] = "Slack"
-    else:
-        None
 
     network.buses["v_mag_pu_min"] = 0.90 
     network.buses["v_mag_pu_max"] = 1.10 
-    network.generators.control = "PV"
 
+    non_slack = network.generators.index != "Slack_generator"
+    network.generators.loc[non_slack, "control"] = "PV"
+    network.generators.loc["Slack_generator", "control"] = "Slack"
+    network.generators.loc["Slack_generator", "p_set"] = 0.0
 
     performance(t0)
 
